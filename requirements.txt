@@ -1,0 +1,9 @@
+crewai
+crewai-tools
+langchain-openai
+pandas
+scikit-learn
+matplotlib
+seaborn
+streamlit
+python-dotenv
