@@ -31,3 +31,73 @@ def load_and_clean_data(filepath: str) -> str:
         f"Columns: {list(df.columns)}\n"
         f"Saved to: outputs/clean_data.csv"
     )
+    import matplotlib.pyplot as plt
+import seaborn as sns
+
+@tool("analyze_and_visualize_data")
+def analyze_and_visualize_data(filepath: str) -> str:
+    """
+    Reads clean_data.csv, generates 3 charts, and writes
+    a business summary. Use this for exploratory data analysis.
+    """
+    # קריאת הדאטא
+    df = pd.read_csv(filepath)
+
+    # יצירת תיקיית outputs אם לא קיימת
+    os.makedirs("outputs", exist_ok=True)
+
+    # גרף 1 — התפלגות גילאים
+    plt.figure(figsize=(8, 4))
+    df['age'].hist(bins=20, color='steelblue', edgecolor='white')
+    plt.title('Age Distribution of Patients')
+    plt.xlabel('Age')
+    plt.ylabel('Count')
+    plt.tight_layout()
+    plt.savefig('outputs/chart_age.png')
+    plt.close()
+
+    # גרף 2 — התפלגות כולסטרול
+    plt.figure(figsize=(8, 4))
+    df['chol'].hist(bins=20, color='tomato', edgecolor='white')
+    plt.title('Cholesterol Distribution')
+    plt.xlabel('Cholesterol (mg/dL)')
+    plt.ylabel('Count')
+    plt.tight_layout()
+    plt.savefig('outputs/chart_cholesterol.png')
+    plt.close()
+
+    # גרף 3 — heatmap של קורלציות
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(df.corr(numeric_only=True),
+                annot=True, fmt='.2f',
+                cmap='coolwarm', linewidths=0.5)
+    plt.title('Feature Correlation Heatmap')
+    plt.tight_layout()
+    plt.savefig('outputs/chart_correlation.png')
+    plt.close()
+
+    # סיכום עסקי
+    high_risk = df[df['condition'] == 1]
+    low_risk  = df[df['condition'] == 0]
+
+    summary = f"""
+## EDA Summary — Heart Disease Dataset
+
+**Dataset:** {len(df)} patients, {len(df.columns)} features
+
+**Risk distribution:**
+- High risk (condition=1): {len(high_risk)} patients ({len(high_risk)/len(df)*100:.1f}%)
+- Low risk  (condition=0): {len(low_risk)}  patients ({len(low_risk)/len(df)*100:.1f}%)
+
+**Age:** mean={df['age'].mean():.1f}, min={df['age'].min()}, max={df['age'].max()}
+**Cholesterol:** mean={df['chol'].mean():.1f}, min={df['chol'].min()}, max={df['chol'].max()}
+**Max Heart Rate:** mean={df['thalach'].mean():.1f}
+
+**Charts saved:** chart_age.png, chart_cholesterol.png, chart_correlation.png
+"""
+
+    # שמירת הסיכום
+    with open('outputs/insights.md', 'w') as f:
+        f.write(summary)
+
+    return summary
