@@ -2,7 +2,7 @@ from crewai import Agent, Task, Crew
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.data_tools import load_and_clean_data, analyze_and_visualize_data
+from tools.data_tools import load_and_clean_data, analyze_and_visualize_data, generate_dataset_contract
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -51,11 +51,30 @@ eda_task = Task(
     expected_output="A markdown summary with key statistics and chart locations",
     agent=eda_agent
 )
+# Agent 3 - Dataset Contract
+contract_agent = Agent(
+    role="Data Governance Specialist",
+    goal="Define a formal dataset contract for Crew 2",
+    backstory="""You are a data governance expert who ensures
+    that all datasets are formally documented before modeling begins.
+    You never approve a dataset without a complete schema definition.""",
+    tools=[generate_dataset_contract],
+    verbose=True
+)
 
+contract_task = Task(
+    description="""
+    Read outputs/clean_data.csv and generate a formal dataset contract.
+    Save it to outputs/dataset_contract.json
+    The contract must include all column names, types, ranges, and approval status.
+    """,
+    expected_output="Path to saved dataset_contract.json and confirmation of approval",
+    agent=contract_agent
+)
 # ---- הקרוז ----
 analyst_crew = Crew(
-    agents=[data_ingestion_agent, eda_agent],
-    tasks=[ingestion_task, eda_task],
+   agents=[data_ingestion_agent, eda_agent, contract_agent],
+    tasks=[ingestion_task, eda_task, contract_task],
     verbose=True
 )
 

@@ -101,3 +101,40 @@ def analyze_and_visualize_data(filepath: str) -> str:
         f.write(summary)
 
     return summary
+    import json
+
+@tool("generate_dataset_contract")
+def generate_dataset_contract(filepath: str) -> str:
+    """
+    Reads clean_data.csv and generates a dataset_contract.json.
+    Use this to create a formal schema definition for Crew 2.
+    """
+    df = pd.read_csv(filepath)
+    os.makedirs("outputs", exist_ok=True)
+
+    features = []
+    for col in df.columns:
+        features.append({
+            "name": col,
+            "type": "binary" if df[col].nunique() <= 2 else "numeric",
+            "min": int(df[col].min()),
+            "max": int(df[col].max()),
+            "nullable": bool(df[col].isnull().any()),
+            "medical_notes": f"Column {col} - range [{int(df[col].min())}, {int(df[col].max())}]"
+        })
+
+    contract = {
+        "contract_version": "1.0",
+        "dataset_name": "heart_disease_cleaned",
+        "total_rows": len(df),
+        "total_columns": len(df.columns),
+        "features": features,
+        "target_column": "condition",
+        "target_classes": ["0 - no disease", "1 - disease present"],
+        "approved_for_modeling": True
+    }
+
+    with open("outputs/dataset_contract.json", "w") as f:
+        json.dump(contract, f, indent=2)
+
+    return f"Contract saved to outputs/dataset_contract.json\nRows: {len(df)}\nColumns: {len(df.columns)}\nApproved for modeling: True"
