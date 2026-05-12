@@ -2,7 +2,7 @@ from crewai import Agent, Task, Crew
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.data_tools import engineer_features
+from tools.data_tools import engineer_features, train_and_evaluate_models
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,11 +28,32 @@ feature_task = Task(
     expected_output="Summary of new features added and path to features.csv",
     agent=feature_agent
 )
+# Agent 5 - Model Training
+model_agent = Agent(
+    role="Machine Learning Engineer",
+    goal="Train and evaluate predictive models for heart disease detection",
+    backstory="""You are an ML engineer with expertise in clinical predictive
+    modeling. You always compare multiple models and choose the best one
+    based on ROC-AUC score.""",
+    tools=[train_and_evaluate_models],
+    verbose=True
+)
 
+model_task = Task(
+    description="""
+    Read outputs/features.csv and train two models:
+    Logistic Regression and Random Forest.
+    Compare them using accuracy, F1, and ROC-AUC.
+    Save the best model to outputs/model.pkl
+    Save the comparison report to outputs/evaluation_report.md
+    """,
+    expected_output="Evaluation report comparing both models with winner declared",
+    agent=model_agent
+)
 # Crew
 scientist_crew = Crew(
-    agents=[feature_agent],
-    tasks=[feature_task],
+    agents=[feature_agent, model_agent],
+    tasks=[feature_task, model_task],
     verbose=True
 )
 

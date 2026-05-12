@@ -176,3 +176,73 @@ def engineer_features(filepath: str) -> str:
         f"Final shape: {df.shape}\n"
         f"Saved to: outputs/features.csv"
     )
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+import joblib
+
+@tool("train_and_evaluate_models")
+def train_and_evaluate_models(filepath: str) -> str:
+    """
+    Reads features.csv, trains Logistic Regression and Random Forest,
+    compares them, saves the best model as model.pkl and evaluation_report.md.
+    Use this for model training and evaluation.
+    """
+    df = pd.read_csv(filepath)
+    os.makedirs("outputs", exist_ok=True)
+
+    # הכנת הדאטא — רק עמודות מספריות
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    numeric_cols = [c for c in numeric_cols if c != 'condition']
+
+    X = df[numeric_cols]
+    y = df['condition']
+
+    # חלוקה לאימון ובדיקה
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # מודל 1 — Logistic Regression
+    lr = LogisticRegression(max_iter=1000, random_state=42)
+    lr.fit(X_train, y_train)
+    lr_pred = lr.predict(X_test)
+    lr_acc  = accuracy_score(y_test, lr_pred)
+    lr_f1   = f1_score(y_test, lr_pred)
+    lr_auc  = roc_auc_score(y_test, lr.predict_proba(X_test)[:,1])
+
+    # מודל 2 — Random Forest
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf.fit(X_train, y_train)
+    rf_pred = rf.predict(X_test)
+    rf_acc  = accuracy_score(y_test, rf_pred)
+    rf_f1   = f1_score(y_test, rf_pred)
+    rf_auc  = roc_auc_score(y_test, rf.predict_proba(X_test)[:,1])
+
+    # בחירת המודל הטוב יותר
+    best_model = rf if rf_auc > lr_auc else lr
+    best_name  = "Random Forest" if rf_auc > lr_auc else "Logistic Regression"
+    joblib.dump(best_model, "outputs/model.pkl")
+
+    # דוח השוואה
+    report = f"""## Model Evaluation Report
+
+### Logistic Regression
+- Accuracy: {lr_acc:.3f}
+- F1 Score: {lr_f1:.3f}
+- ROC-AUC:  {lr_auc:.3f}
+
+### Random Forest
+- Accuracy: {rf_acc:.3f}
+- F1 Score: {rf_f1:.3f}
+- ROC-AUC:  {rf_auc:.3f}
+
+### Winner: {best_name}
+- Best ROC-AUC: {max(lr_auc, rf_auc):.3f}
+- Model saved to: outputs/model.pkl
+"""
+    with open("outputs/evaluation_report.md", "w") as f:
+        f.write(report)
+
+    return report    
