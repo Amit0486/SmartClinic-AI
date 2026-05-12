@@ -138,3 +138,41 @@ def generate_dataset_contract(filepath: str) -> str:
         json.dump(contract, f, indent=2)
 
     return f"Contract saved to outputs/dataset_contract.json\nRows: {len(df)}\nColumns: {len(df.columns)}\nApproved for modeling: True"
+
+@tool("engineer_features")
+def engineer_features(filepath: str) -> str:
+    """
+    Reads clean_data.csv and creates new features.
+    Saves features.csv to outputs/.
+    Use this for feature engineering before model training.
+    """
+    df = pd.read_csv(filepath)
+    os.makedirs("outputs", exist_ok=True)
+
+    # feature 1 — קבוצת גיל
+    df['age_group'] = pd.cut(df['age'],
+                              bins=[0, 40, 55, 100],
+                              labels=['young', 'middle', 'senior'])
+    df['age_group'] = df['age_group'].astype(str)
+
+    # feature 2 — קטגוריית לחץ דם
+    df['bp_category'] = pd.cut(df['trestbps'],
+                                bins=[0, 120, 140, 999],
+                                labels=['normal', 'elevated', 'high'])
+    df['bp_category'] = df['bp_category'].astype(str)
+
+    # feature 3 — סיכון כולסטרול
+    df['chol_risk'] = (df['chol'] > 240).astype(int)
+
+    # feature 4 — קצב לב מקסימלי נמוך
+    df['low_max_hr'] = (df['thalach'] < 140).astype(int)
+
+    # שמירה
+    df.to_csv("outputs/features.csv", index=False)
+
+    return (
+        f"Feature engineering complete.\n"
+        f"New features added: age_group, bp_category, chol_risk, low_max_hr\n"
+        f"Final shape: {df.shape}\n"
+        f"Saved to: outputs/features.csv"
+    )
