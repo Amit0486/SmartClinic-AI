@@ -2,7 +2,7 @@ from crewai import Agent, Task, Crew
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.data_tools import engineer_features, train_and_evaluate_models
+from tools.data_tools import engineer_features, train_and_evaluate_models, generate_model_card
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -50,12 +50,34 @@ model_task = Task(
     expected_output="Evaluation report comparing both models with winner declared",
     agent=model_agent
 )
-# Crew
-scientist_crew = Crew(
-    agents=[feature_agent, model_agent],
-    tasks=[feature_task, model_task],
+# Agent 6 - Model Card
+model_card_agent = Agent(
+    role="Senior Medical AI Researcher",
+    goal="Write a complete model card for the heart disease prediction model",
+    backstory="""You are a medical AI researcher who documents AI models
+    for clinical use. You always include ethical considerations and
+    limitations. You write for both technical and non-technical audiences.""",
+    tools=[generate_model_card],
     verbose=True
 )
+
+model_card_task = Task(
+    description="""
+    Read outputs/evaluation_report.md and write a complete model card.
+    Include: model purpose, training data, performance metrics,
+    limitations, and ethical considerations.
+    Save to outputs/model_card.md
+    """,
+    expected_output="A complete model card saved to outputs/model_card.md",
+    agent=model_card_agent
+)
+# Crew
+scientist_crew = Crew(
+    agents=[feature_agent, model_agent, model_card_agent],
+    tasks=[feature_task, model_task, model_card_task],
+    verbose=True
+)
+
 
 if __name__ == "__main__":
     result = scientist_crew.kickoff()

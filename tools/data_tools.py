@@ -246,3 +246,60 @@ def train_and_evaluate_models(filepath: str) -> str:
         f.write(report)
 
     return report    
+@tool("generate_model_card")
+def generate_model_card(evaluation_report_path: str) -> str:
+    """
+    Reads evaluation_report.md and generates a model_card.md.
+    The model card includes purpose, metrics, limitations and ethical considerations.
+    Use this after model training is complete.
+    """
+    with open(evaluation_report_path, "r") as f:
+        eval_report = f.read()
+
+    model_card = f"""# Model Card — SmartClinic Heart Disease Predictor
+
+## Model Purpose
+This model predicts the presence of heart disease in patients
+based on clinical measurements. It is designed to assist
+medical professionals in early risk identification.
+
+## Training Data
+- Dataset: Heart Disease Cleveland UCI
+- Total patients: 297
+- Features used: age, sex, chest pain type, blood pressure,
+  cholesterol, blood sugar, ECG, max heart rate, angina,
+  ST depression, and engineered features
+- Target: condition (0 = no disease, 1 = disease present)
+
+## Model Performance
+{eval_report}
+
+## Winner Model: Random Forest
+Selected based on highest ROC-AUC score.
+
+## Limitations
+- Dataset contains only 297 patients — limited sample size
+- Dataset is 68% male — may underperform for female patients
+- Patients outside age range 29-77 are underrepresented
+- Model should NOT be used as the sole clinical decision maker
+
+## Ethical Considerations
+- Gender bias: female patients are underrepresented in training data
+- This model is a decision support tool only
+- A qualified physician must always review the output
+- Confidence score does not guarantee correctness
+- Regular retraining with new data is recommended
+
+## Intended Use
+- Decision support for medical professionals
+- Early risk screening — not diagnosis
+- Must be used alongside clinical judgment
+
+## Model File
+Saved at: outputs/model.pkl
+"""
+
+    with open("outputs/model_card.md", "w") as f:
+        f.write(model_card)
+
+    return "Model card saved to outputs/model_card.md"   
