@@ -54,12 +54,15 @@ if st.button("🔍 Predict Risk", type="primary"):
     st.markdown("---")
     st.markdown("### Result")
 
-    if prediction == 1:
-        st.error(f"⚠️ HIGH RISK — Probability: {probability:.1%}")
-        st.markdown("This patient shows indicators of heart disease.")
+    if probability >= 0.70:
+      st.error(f"HIGH RISK - Probability: {probability:.1%}")
+      st.markdown("This patient shows strong indicators of heart disease.")
+    elif probability >= 0.45:
+      st.warning(f"BORDERLINE RISK - Probability: {probability:.1%}")
+      st.markdown("This patient shows some indicators of heart disease. Further evaluation recommended.")
     else:
-        st.success(f"✅ LOW RISK — Probability: {probability:.1%}")
-        st.markdown("This patient shows low indicators of heart disease.")
+      st.success(f"LOW RISK - Probability: {probability:.1%}")
+      st.markdown("This patient shows low indicators of heart disease.")
 
     st.warning("⚕️ This tool is for decision support only. Always consult a physician.")
 
